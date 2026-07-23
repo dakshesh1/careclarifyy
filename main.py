@@ -93,7 +93,7 @@ async def analyze(file: UploadFile = File(...)):
         image_bytes = await file.read()
 
         response = client.models.generate_content(
-            model="models/gemini-3.5-flash",
+            model="gemini-2.5-pro",
             contents=[
                 types.Content(
                     role="user",
