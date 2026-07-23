@@ -379,15 +379,139 @@ function classifyBillText(text) {
     return sampleBills.fever;
   }
 
-  const totalMatch = normalized.match(/\b(?:₹|inr)?\s*([\d,]{3,})\b/g);
-  if (totalMatch) {
-    const cleaned = totalMatch.map(v => v.replace(/[₹,\s]/g, ""));
-    if (cleaned.some(v => v === "215000")) return sampleBills.csection;
-    if (cleaned.some(v => v === "410000")) return sampleBills.cardiac;
-    if (cleaned.some(v => v === "98000")) return sampleBills.fever;
+  const extractedTotal = extractInvoiceTotal(normalized);
+  if (extractedTotal) {
+    const closestSample = findClosestSampleByTotal(extractedTotal);
+    if (closestSample) {
+      return closestSample;
+    }
+
+    return buildGenericBillFromTotal(extractedTotal, normalized);
+  }
+
+  if (normalized.trim().length > 0) {
+    return buildGenericBillFromText(normalized);
   }
 
   return null;
+}
+
+function extractInvoiceTotal(text) {
+  const lines = text.split(/\r?\n/);
+  let candidate = null;
+
+  lines.forEach(line => {
+    if (/total|grand total|amount due|net payable|payable amount|bill amount/.test(line)) {
+      const match = line.match(/(?:₹|inr)?\s*([\d,]{3,})/);
+      if (match) {
+        candidate = parseInt(match[1].replace(/[,]/g, ""), 10);
+      }
+    }
+  });
+
+  if (candidate) return candidate;
+
+  const allNumbers = text.match(/(?:₹|inr)?\s*([\d,]{3,})/g);
+  if (!allNumbers) return null;
+
+  const numericValues = allNumbers
+    .map(v => parseInt(v.replace(/[^\d]/g, ""), 10))
+    .filter(v => !Number.isNaN(v) && v > 1000);
+
+  if (numericValues.length === 0) return null;
+  return Math.max(...numericValues);
+}
+
+function findClosestSampleByTotal(total) {
+  let closest = null;
+  let bestDiff = Infinity;
+
+  Object.values(sampleBills).forEach(sample => {
+    const diff = Math.abs(sample.totalOriginal - total);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      closest = sample;
+    }
+  });
+
+  if (bestDiff / total <= 0.35) {
+    return closest;
+  }
+
+  return null;
+}
+
+function buildGenericBillFromTotal(total, text) {
+  const fairTotal = Math.round(total * 0.75);
+  return {
+    title: "Uploaded Invoice Analysis",
+    patient: "Unknown",
+    date: "Unknown",
+    billNo: "Unknown",
+    hospitalName: "Uploaded bill image",
+    totalOriginal: total,
+    totalFair: fairTotal,
+    overcharge: total - fairTotal,
+    items: [
+      {
+        name: "Detected bill total",
+        original: total,
+        fair: fairTotal,
+        category: "Overall",
+        status: fairTotal < total ? "Overcharged" : "Reasonable",
+        reason: "This estimate is based on a generic benchmark of 75% of the uploaded billed total when exact line-item matching is unavailable."
+      }
+    ],
+    warnings: [
+      {
+        id: "warn-generic-1",
+        type: fairTotal < total ? "danger" : "warning",
+        title: fairTotal < total ? "Uploaded bill appears expensive" : "Uploaded bill appears reasonable",
+        text: fairTotal < total
+          ? "The uploaded bill total exceeds a generic fair benchmark. We recommend asking the hospital for a full itemized invoice and comparing line items to policy caps."
+          : "The uploaded bill total is within a generic fair benchmark. Verify the bill with your insurer or hospital for exact line-item compliance.",
+        action: fairTotal < total ? "Request Itemized Bill" : "Review Bill Details"
+      }
+    ],
+    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
+  };
+}
+
+function buildGenericBillFromText(text) {
+  const total = extractInvoiceTotal(text) || 0;
+  const fairTotal = Math.round(total * 0.75);
+  return {
+    title: "Uploaded Invoice Analysis",
+    patient: "Unknown",
+    date: "Unknown",
+    billNo: "Unknown",
+    hospitalName: "Uploaded bill image",
+    totalOriginal: total,
+    totalFair: fairTotal,
+    overcharge: total - fairTotal,
+    items: [
+      {
+        name: "OCR extracted invoice summary",
+        original: total,
+        fair: fairTotal,
+        category: "Overall",
+        status: total > fairTotal ? "Overcharged" : "Reasonable",
+        reason: "This fallback summary is generated from the recognized invoice text when line-item extraction was unavailable."
+      }
+    ],
+    warnings: [
+      {
+        id: "warn-generic-2",
+        type: total > fairTotal ? "danger" : "warning",
+        title: total > fairTotal ? "Uploaded bill looks expensive" : "Uploaded bill looks reasonable",
+        text: total > fairTotal
+          ? "We could not match exact item lines, but the total appears higher than a general benchmark. Request a detailed breakdown from the hospital."
+          : "We could not match exact item lines, but the total appears within a general benchmark. Verify by comparing an itemized bill to insurer caps.",
+        action: total > fairTotal ? "Request Detailed Invoice" : "Review Bill Breakdown"
+      }
+    ],
+    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
+  };
 }
 
 // Simulated scan overlay & delay
