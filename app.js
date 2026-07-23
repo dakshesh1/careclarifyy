@@ -506,6 +506,18 @@ window.activateDisputeFlow = function(grievanceTitle) {
 
 
 // 4. Prescription Decoder Controller
+async function searchMedicine(medicineName) {
+
+    const response = await fetch(
+        `http://127.0.0.1:8000/compare?medicine_name=${encodeURIComponent(medicineName)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Medicine not found");
+    }
+
+    return await response.json();
+}
 function setupPrescriptionDecoder() {
   const searchInput = document.getElementById("drug-search");
   const suggestionsList = document.getElementById("autocomplete-suggestions");
@@ -514,37 +526,25 @@ function setupPrescriptionDecoder() {
   const searchNotice = document.getElementById("decoder-notice");
 
   // Show suggestions as typing
-  searchInput.addEventListener("input", () => {
-    const val = searchInput.value.trim().toLowerCase();
-    suggestionsList.innerHTML = "";
-    
-    if (val.length === 0) {
-      suggestionsList.style.display = "none";
-      return;
+ searchInput.addEventListener("change", async () => {
+
+    const medicine = searchInput.value.trim();
+
+    if (!medicine) return;
+
+    try {
+
+        const data = await searchMedicine(medicine);
+
+        renderDrugComparison(data);
+
+    } catch (err) {
+
+        alert("Medicine not found");
+
     }
 
-    const matches = prescriptionDB.filter(d => 
-      d.brand.toLowerCase().includes(val) || 
-      d.generic.toLowerCase().includes(val)
-    );
-
-    if (matches.length > 0) {
-      suggestionsList.style.display = "block";
-      matches.forEach(match => {
-        const item = document.createElement("div");
-        item.className = "autocomplete-item";
-        item.textContent = `${match.brand} (${match.generic})`;
-        item.addEventListener("click", () => {
-          searchInput.value = match.brand;
-          suggestionsList.style.display = "none";
-          renderDrugComparison(match);
-        });
-        suggestionsList.appendChild(item);
-      });
-    } else {
-      suggestionsList.style.display = "none";
-    }
-  });
+});
 
   // Hide suggestions list when clicking outside
   document.addEventListener("click", (e) => {
@@ -554,41 +554,73 @@ function setupPrescriptionDecoder() {
   });
 
   // Handle popular drug tags clicks
-  popularTags.forEach(tag => {
-    tag.addEventListener("click", () => {
-      const drugName = tag.getAttribute("data-drug");
-      const drug = prescriptionDB.find(d => d.brand.startsWith(drugName));
-      if (drug) {
-        searchInput.value = drug.brand;
-        renderDrugComparison(drug);
-      }
+ popularTags.forEach(tag => {
+    tag.addEventListener("click", async () => {
+
+        const medicine = tag.getAttribute("data-drug");
+
+        searchInput.value = medicine;
+
+        try {
+
+            const data = await searchMedicine(medicine);
+
+            renderDrugComparison(data);
+
+        } catch (err) {
+
+            alert("Medicine not found");
+
+        }
+
     });
-  });
+});
 }
 
 function renderDrugComparison(drug) {
-  const comparisonContainer = document.getElementById("decoder-result-panel");
-  const searchNotice = document.getElementById("decoder-notice");
-  
-  searchNotice.style.display = "none";
-  comparisonContainer.style.display = "flex";
 
-  const savingsPercent = Math.round(((drug.brandPrice - drug.genericPrice) / drug.brandPrice) * 100);
+    const comparisonContainer = document.getElementById("decoder-result-panel");
+    const searchNotice = document.getElementById("decoder-notice");
 
-  // Fill in DOM
-  document.getElementById("brand-title").textContent = drug.brand;
-  document.getElementById("brand-price-val").textContent = `₹${drug.brandPrice.toFixed(2)}`;
-  
-  document.getElementById("generic-title").textContent = drug.generic;
-  document.getElementById("generic-price-val").textContent = `₹${drug.genericPrice.toFixed(2)}`;
-  
-  document.getElementById("drug-savings-percent").textContent = `${savingsPercent}% SAVED`;
-  document.getElementById("drug-savings-amount").textContent = `Save ₹${(drug.brandPrice - drug.genericPrice).toFixed(2)} per strip`;
-  
-  document.getElementById("drug-therapeutic-class").textContent = drug.category;
-  document.getElementById("drug-indication").textContent = drug.indication;
-  document.getElementById("drug-usage").textContent = drug.usage;
-  document.getElementById("drug-warnings").textContent = drug.warnings;
+    searchNotice.style.display = "none";
+    comparisonContainer.style.display = "flex";
+
+    const brandPrice = drug.selected_medicine.price || 0;
+    const genericPrice = drug.cheapest.price || 0;
+
+    const savingsPercent = Math.round(
+        ((brandPrice - genericPrice) / brandPrice) * 100
+    );
+
+    document.getElementById("brand-title").textContent =
+        drug.selected_medicine.brand_name;
+
+    document.getElementById("brand-price-val").textContent =
+        `₹${brandPrice.toFixed(2)}`;
+
+    document.getElementById("generic-title").textContent =
+        drug.cheapest.brand_name;
+
+    document.getElementById("generic-price-val").textContent =
+        `₹${genericPrice.toFixed(2)}`;
+
+    document.getElementById("drug-savings-percent").textContent =
+        `${savingsPercent}% SAVED`;
+
+    document.getElementById("drug-savings-amount").textContent =
+        `Save ₹${drug.potential_savings.toFixed(2)}`;
+
+    document.getElementById("drug-therapeutic-class").textContent =
+        drug.selected_medicine.category;
+
+    document.getElementById("drug-indication").textContent =
+drug.selected_medicine.description.substring(0,200) + "...";
+
+    document.getElementById("drug-usage").textContent =
+        drug.selected_medicine.manufacturer;
+
+    document.getElementById("drug-warnings").textContent =
+        drug.selected_medicine.side_effects;
 }
 
 
