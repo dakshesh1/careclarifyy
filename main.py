@@ -14,7 +14,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000"],  # Vite
+    allow_origins=["http://localhost:5500","http://127.0.0.1:5500"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -93,7 +93,7 @@ async def analyze(file: UploadFile = File(...)):
         image_bytes = await file.read()
 
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-3.6-flash",
             contents=[
                 types.Content(
                     role="user",
