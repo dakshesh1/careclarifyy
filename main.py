@@ -20,10 +20,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-client = genai.Client(
-    api_key=os.getenv("GEMINI_API_KEY")
-)
-
 PROMPT = """
 You are an expert medical billing analyst.
 
@@ -89,11 +85,15 @@ def home():
 @app.post("/analyze")
 async def analyze(file: UploadFile = File(...)):
     try:
+        # Initialize client only when needed
+        client = genai.Client(
+            api_key=os.getenv("GEMINI_API_KEY")
+        )
 
         image_bytes = await file.read()
 
         response = client.models.generate_content(
-            model="gemini-3.6-flash",
+            model="gemini-2.0-flash",
             contents=[
                 types.Content(
                     role="user",
@@ -102,9 +102,10 @@ async def analyze(file: UploadFile = File(...)):
                         types.Part.from_bytes(
                             data=image_bytes, 
                             mime_type=file.content_type,
-                ),
-            ],
-        )])
+                        ),
+                    ],
+                )
+            ])
 
         print("\n========== GEMINI RAW RESPONSE ==========")
         print(response)
@@ -150,3 +151,4 @@ async def analyze(file: UploadFile = File(...)):
                 "error": str(e)
             }
         )
+
