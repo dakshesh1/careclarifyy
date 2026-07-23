@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CareClarify - Medical Cost Transparency & Patient Empowerment</title>
+  <meta name="description" content="Demystifying hospital billing and prescriptions for families. Verify costs, identify overcharges, discover generic drug alternatives, and assert patient consumer rights.">
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+
+  <!-- Floating Navigation Header -->
+  <header>
+    <div class="container nav-container">
+      <a href="#" class="brand" data-target="home">
+        <img src="assets/logo.png" alt="CareClarify Logo" class="brand-logo">
+        <span class="brand-name">CareClarify</span>
+      </a>
+      <nav>
+        <ul>
+          <li><button class="active" data-target="home">Home</button></li>
+          <li><button data-target="analyzer">Bill Analyzer</button></li>
+          <li><button data-target="decoder">Rx Decoder</button></li>
+          <li><button data-target="estimator">Cost Estimator</button></li>
+          <li><button id="btn-rights" data-target="rights">Rights Hub</button></li>
+        </ul>
+      </nav>
+      <div class="header-action">
+        <button class="btn btn-primary" data-target="analyzer">Scan a Bill</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    
+    <!-- SECTION 1: HOME / LANDING -->
+    <section id="home" class="app-section active">
+      <div class="hero-grid">
+        <div class="hero-text">
+          <h1>Medical Costs,<br>Demystified.</h1>
+          <p>CareClarify translates complex, confusing hospital invoices and prescriptions into simple, actionable transparency when your family needs it most. No family should have to choose between trusting a bill and questioning it.</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" data-target="analyzer">Analyze Hospital Bill</button>
+            <button class="btn btn-secondary" data-target="estimator">Compare Local Tariffs</button>
+          </div>
+        </div>
+        <div class="hero-card-display">
+          <div class="glass-panel stat-box">
+            <div class="stat-number">78%</div>
+            <div class="stat-label">
+              <strong>Billing Anomalies</strong><br>
+              of audited hospital bills contain duplicate items or inflated category rents.
+            </div>
+          </div>
+          <div class="glass-panel stat-box">
+            <div class="stat-number">80%</div>
+            <div class="stat-label">
+              <strong>Potential Rx Savings</strong><br>
+              available by substituting premium brand medicines with generic equivalents.
+            </div>
+          </div>
+          <div class="glass-panel stat-box">
+            <div class="stat-number">&#8377;0</div>
+            <div class="stat-label">
+              <strong>No Paywalls</strong><br>
+              Our mission is absolute transparency—available to every citizen, always.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="mission-banner">
+        <h3>Our Core Philosophy</h3>
+        <p>We are not built to replace doctors or clinical teams. We are here to ensure that financial vulnerability does not block critical healthcare decisions. By empowering you with itemized audit records, local capped tariffs, and legal letters, we bring balance back to patient care.</p>
+      </div>
+
+      <h2 class="features-title">Transparency Tools</h2>
+      <div class="features-grid">
+        <!-- Feature 1 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-wrapper">📋</div>
+          <h3>Bill Auditor</h3>
+          <p>Upload a photo or text breakdown of an itemized invoice. We scan for room-rent discrepancies, illegal stent/implant markups, and duplicate consumables kits.</p>
+          <a href="#" class="btn-link" data-target="analyzer">Audit a Bill &rarr;</a>
+        </div>
+        <!-- Feature 2 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-wrapper">💊</div>
+          <h3>Prescription Decoder</h3>
+          <p>Translate brand-name pharmaceutical prescriptions into active chemical ingredients. Spot price-matched FDA generic substitutes and average Indian rates.</p>
+          <a href="#" class="btn-link" data-target="decoder">Decode Medicine &rarr;</a>
+        </div>
+        <!-- Feature 3 -->
+        <div class="glass-panel feature-card">
+          <div class="feature-icon-wrapper">⚖️</div>
+          <h3>Rights & Dispute Hub</h3>
+          <p>Review legal rights under the Clinical Establishments Act and patient charters. Compile, print, and export official dispute letters for hospital desks.</p>
+          <a href="#" class="btn-link" data-target="rights">Review Patient Rights &rarr;</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: BILL ANALYZER -->
+    <section id="analyzer" class="app-section">
+      <div class="bill-layout">
+        <!-- Left Pane: Upload & Demo -->
+        <div class="glass-panel" id="initial-analyzer-view">
+          <h2 style="margin-bottom: 1rem; font-family: var(--font-display);">Audit Your Invoice</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.95rem;">Upload your final summary bill or select a simulated template to review how CareClarify audits charges against regional agreements and regulations.</p>
+          
+          <div class="upload-zone" id="upload-zone">
+            <span class="upload-icon">📤</span>
+            <p class="upload-text">Drag & Drop Bill / Receipt here</p>
+            <p class="upload-subtext">Supports PDF, JPEG, PNG, or Text logs</p>
+            <button class="btn btn-secondary" style="pointer-events: none;">Browse Files</button>
+            <input type="file" id="file-input" class="file-input">
+          </div>
+
+          <div class="sample-selector">
+            <label>Or select a simulated patient case:</label>
+            <div class="sample-btns">
+              <button class="sample-btn" data-bill="csection">
+                <span>Maternity C-Section Delivery</span>
+                <span class="badge">₹67,000 Excess</span>
+              </button>
+              <button class="sample-btn" data-bill="cardiac">
+                <span>Cardiac Angioplasty Stent</span>
+                <span class="badge">₹1,12,000 Excess</span>
+              </button>
+              <button class="sample-btn" data-bill="fever">
+                <span>Severe Dengue Ward Stay</span>
+                <span class="badge">₹34,000 Excess</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Pane / Dynamic Result dashboard (initially hidden) -->
+        <div class="glass-panel analysis-dashboard" id="analysis-results" style="display: none; grid-column: span 2;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 style="font-family: var(--font-display);">Audit Dashboard</h2>
+              <p style="color: var(--text-secondary); font-size: 0.85rem;">CareClarify verified comparison sheet based on standard tariff caps.</p>
+            </div>
+            <button class="btn btn-secondary" id="reset-analyzer-btn">← Upload New Bill</button>
+          </div>
+
+          <!-- Total Summary Cards -->
+          <div class="analysis-summary-header">
+            <div class="summary-tile">
+              <span class="tile-label">Original Billed Total</span>
+              <span class="tile-value" id="ana-total-original">₹0</span>
+            </div>
+            <div class="summary-tile savings">
+              <span class="tile-label">CareClarify Fair Total</span>
+              <span class="tile-value" id="ana-total-fair">₹0</span>
+            </div>
+            <div class="summary-tile alert">
+              <span class="tile-label">Disputed Overcharge</span>
+              <span class="tile-value" id="ana-total-savings">₹0</span>
+            </div>
+          </div>
+
+          <!-- Split Table View -->
+          <div class="split-viewer">
+            <!-- Left: Original Billed -->
+            <div class="bill-table-wrapper">
+              <div class="table-header">
+                <span>ORIGINAL HOSPITAL INVOICE</span>
+                <span>As Rendered</span>
+              </div>
+              <table class="bill-table">
+                <thead>
+                  <tr>
+                    <th>Line Item & Code</th>
+                    <th class="amount">Billed Price</th>
+                  </tr>
+                </thead>
+                <tbody id="original-table-body">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Right: Fair Audited -->
+            <div class="bill-table-wrapper" style="border-color: rgba(16, 185, 129, 0.2);">
+              <div class="table-header" style="background: rgba(16, 185, 129, 0.05); color: var(--accent-green);">
+                <span>CARECLARIFY AUDITED TARIFFS</span>
+                <span>Fair Market Rate</span>
+              </div>
+              <table class="bill-table">
+                <thead>
+                  <tr>
+                    <th>Line Item Name</th>
+                    <th class="amount">Fair Price</th>
+                  </tr>
+                </thead>
+                <tbody id="audited-table-body">
+                  <!-- JS populated -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Chart & Detailed Warnings Grid -->
+          <div class="split-viewer">
+            <!-- Left: Donut Chart -->
+            <div class="chart-box">
+              <div class="chart-header">
+                <span class="chart-title">Fair Charge Distribution</span>
+              </div>
+              <div class="chart-container">
+                <svg width="100" height="100" viewBox="0 0 42 42" class="donut-svg">
+                  <!-- Room Rent -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" stroke="var(--accent-teal)" style="stroke-dasharray: 20 80; stroke-dashoffset: 0;"></circle>
+                  <!-- OT Fees -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" stroke="var(--accent-blue)" style="stroke-dasharray: 25 75; stroke-dashoffset: -20;"></circle>
+                  <!-- Doctor Fees -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" stroke="var(--accent-indigo)" style="stroke-dasharray: 35 65; stroke-dashoffset: -45;"></circle>
+                  <!-- Consumables -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" stroke="var(--accent-green)" style="stroke-dasharray: 10 90; stroke-dashoffset: -80;"></circle>
+                  <!-- Others -->
+                  <circle class="donut-segment" cx="21" cy="21" r="15.915" stroke="var(--accent-orange)" style="stroke-dasharray: 10 90; stroke-dashoffset: -90;"></circle>
+                </svg>
+                <div class="legend-grid">
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: var(--accent-teal);"></div>
+                    <span>Room: <strong class="val">₹0</strong></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: var(--accent-blue);"></div>
+                    <span>OT: <strong class="val">₹0</strong></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: var(--accent-indigo);"></div>
+                    <span>Doctors: <strong class="val">₹0</strong></span>
+                  </div>
+                  <div class="legend-item">
+                    <div class="legend-color" style="background: var(--accent-green);"></div>
+                    <span>Consumables: <strong class="val">₹0</strong></span>
+                  </div>
+                  <div class="legend-item" style="grid-column: span 2;">
+                    <div class="legend-color" style="background: var(--accent-orange);"></div>
+                    <span>Others/Rx: <strong class="val">₹0</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right: Warning findings list -->
+            <div class="findings-pane" id="warnings-list">
+              <!-- JS populated warnings -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: PRESCRIPTION DECODER -->
+    <section id="decoder" class="app-section">
+      <div class="decoder-layout">
+        <!-- Search & popular tags -->
+        <div class="glass-panel search-container">
+          <h2 style="font-family: var(--font-display); margin-bottom: 0.5rem;">Decode Prescriptions</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem;">Decode brand names into chemical generics. Research side effects, warnings, and check pricing margins.</p>
+          
+          <div class="input-group">
+            <label for="drug-search">Search Brand or Molecule Name:</label>
+            <div class="search-input-wrapper">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="drug-search" class="text-input" placeholder="e.g., Augmentin, Lipitor, Jalra-M..." autocomplete="off">
+            </div>
+            <div class="autocomplete-list" id="autocomplete-suggestions">
+              <!-- Autocomplete items -->
+            </div>
+          </div>
+
+          <div class="popular-drugs">
+            <h5>Popular Lookups</h5>
+            <div class="tag-cloud">
+              <span class="drug-tag" data-drug="Lipitor">Lipitor (Atorvastatin)</span>
+              <span class="drug-tag" data-drug="Jalra-M">Jalra-M (Diabetes)</span>
+              <span class="drug-tag" data-drug="Pantocid">Pantocid (Antacid)</span>
+              <span class="drug-tag" data-drug="Clopilet">Clopilet (Blood Thinner)</span>
+              <span class="drug-tag" data-drug="Augmentin">Augmentin (Antibiotic)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Side: Comparison results -->
+        <div class="glass-panel comparison-pane">
+          <!-- Initial Notice -->
+          <div id="decoder-notice" style="text-align: center; padding: 4rem 1.5rem; color: var(--text-secondary);">
+            <span style="font-size: 3rem; display: block; margin-bottom: 1rem; opacity: 0.5;">💊</span>
+            <p>Type a prescription name on the left or select a popular lookup to load brand vs generic cost sheets.</p>
+          </div>
+
+          <!-- Comparison Display (Hidden by default) -->
+          <div id="decoder-result-panel" style="display: none; flex-direction: column; gap: 1.5rem;">
+            <div class="comparison-card">
+              <div class="comparison-header">
+                <span class="brand-badge">Brand Med</span>
+                <span class="generic-badge">Generic Alternative</span>
+              </div>
+              <div class="comparison-body">
+                <!-- Brand details -->
+                <div class="drug-panel brand-side">
+                  <div class="drug-name" id="brand-title">Brand Name</div>
+                  <div class="drug-company">Standard Retail Pricing</div>
+                  <div class="drug-price" id="brand-price-val">₹0.00</div>
+                  <div class="price-subtext">per standard 10-tab strip</div>
+                </div>
+                <!-- Generic details -->
+                <div class="drug-panel generic-side">
+                  <div class="drug-name" id="generic-title">Generic Name</div>
+                  <div class="drug-company">Jan Aushadhi / Standard Cap</div>
+                  <div class="drug-price" id="generic-price-val">₹0.00</div>
+                  <div class="price-subtext">average equivalent strip price</div>
+                </div>
+              </div>
+              <!-- Savings callout -->
+              <div class="savings-banner">
+                <span class="savings-label">Direct Cost Difference:</span>
+                <span class="savings-percentage" id="drug-savings-percent">0% SAVED</span>
+              </div>
+            </div>
+
+            <!-- Savings detailed subtext -->
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 12px; padding: 1rem; font-size: 0.85rem; color: #a7f3d0; text-align: center;" id="drug-savings-amount">
+              You save ₹0.00 per strip on this prescription by demanding generic equivalents.
+            </div>
+
+            <!-- Medical Jargon Translation Details -->
+            <div class="glass-panel drug-details-card">
+              <h4 style="font-family: var(--font-display); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem; margin-bottom: 1rem;">Patient Medication Guide</h4>
+              <div class="details-grid">
+                <div class="detail-item">
+                  <h5>Therapeutic Class</h5>
+                  <p id="drug-therapeutic-class">Cardiovascular</p>
+                </div>
+                <div class="detail-item">
+                  <h5>Indication / Usage</h5>
+                  <p id="drug-indication">Lowers blood cholesterol.</p>
+                </div>
+                <div class="detail-item" style="grid-column: span 2;">
+                  <h5>Directions for Patient</h5>
+                  <p id="drug-usage">Take at night.</p>
+                </div>
+                <div class="detail-item" style="grid-column: span 2; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                  <h5 style="color: var(--accent-orange);">Safety Warning & Precautions</h5>
+                  <p id="drug-warnings" style="color: var(--text-secondary); font-size: 0.9rem;">Limit grapefruit juice intake.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: COST ESTIMATOR -->
+    <section id="estimator" class="app-section">
+      <div class="estimator-layout">
+        <!-- Left: Search forms -->
+        <div class="glass-panel">
+          <h2 style="font-family: var(--font-display); margin-bottom: 0.5rem;">Procedure Cost Estimator</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">Review average local procedure pricing before checking in, or test if your quoted hospital estimate is fair.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- Select Procedure -->
+            <div class="input-group">
+              <label for="select-procedure">Select Procedure / Treatment:</label>
+              <select id="select-procedure" class="select-input">
+                <option value="angioplasty">Cardiac Angioplasty (Single Stent)</option>
+                <option value="csection">Maternity C-Section Delivery</option>
+                <option value="appendectomy">Laparoscopic Appendectomy</option>
+                <option value="kneereplace">Total Knee Replacement (Single)</option>
+                <option value="normaldelivery">Normal / Vaginal Delivery</option>
+                <option value="gallbladder">Cholecystectomy (Gallbladder)</option>
+              </select>
+            </div>
+            
+            <!-- Select City -->
+            <div class="input-group">
+              <label for="select-city">Select City / Location Region:</label>
+              <select id="select-city" class="select-input">
+                <option value="mumbai">Mumbai Metro (Tier-1 Peak)</option>
+                <option value="delhi">Delhi NCR Region</option>
+                <option value="bengaluru">Bengaluru Metro</option>
+                <option value="hyderabad">Hyderabad / Pune</option>
+                <option value="chennai">Chennai Region</option>
+                <option value="tier2">Other Tier-2 Cities & Towns</option>
+              </select>
+            </div>
+
+            <!-- Hospital Type -->
+            <div class="input-group">
+              <label for="select-hospital-type">Hospital Category Quote is For:</label>
+              <select id="select-hospital-type" class="select-input">
+                <option value="pvt-corp">Corporate / Chain Super Specialty (Premium)</option>
+                <option value="pvt-gen">General Private / Trust Hospital (Standard)</option>
+                <option value="gov">Government / Public Medical College</option>
+              </select>
+            </div>
+
+            <!-- Optional: Your Quoted Price -->
+            <div class="input-group" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+              <label for="quoted-cost" style="color: var(--accent-teal);">Enter Quoted/Billed Cost (Optional):</label>
+              <div class="search-input-wrapper">
+                <span class="search-icon" style="left: 1rem; color: var(--accent-teal);">₹</span>
+                <input type="number" id="quoted-cost" class="text-input" placeholder="e.g., 250000" style="border-color: rgba(0, 242, 254, 0.2); padding-left: 2rem;">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Range Outputs & Fairness meter -->
+        <div class="glass-panel comparison-ranges">
+          <h3 style="font-family: var(--font-display); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Regional Average Tariffs</h3>
+          
+          <div class="range-bar-item">
+            <div class="range-bar-labels">
+              <span class="range-tier-name">Government / Public Care</span>
+              <span class="range-tier-price" id="est-gov-range">₹15,000 - ₹30,000</span>
+            </div>
+            <div class="range-progress-bg">
+              <div class="range-progress-fill tier-gov" style="width: 25%;"></div>
+            </div>
+          </div>
+
+          <div class="range-bar-item">
+            <div class="range-bar-labels">
+              <span class="range-tier-name">General Private / Trust Care</span>
+              <span class="range-tier-price" id="est-pvt-gen-range">₹65,000 - ₹95,000</span>
+            </div>
+            <div class="range-progress-bg">
+              <div class="range-progress-fill tier-pvt-gen" style="width: 55%;"></div>
+            </div>
+          </div>
+
+          <div class="range-bar-item">
+            <div class="range-bar-labels">
+              <span class="range-tier-name">Corporate Chain Super Specialty</span>
+              <span class="range-tier-price" id="est-pvt-corp-range">₹1,50,000 - ₹2,40,000</span>
+            </div>
+            <div class="range-progress-bg">
+              <div class="range-progress-fill tier-pvt-corp" style="width: 90%;"></div>
+            </div>
+          </div>
+
+          <!-- Fairness Gauge Indicator (Updates on input) -->
+          <div class="fairness-gauge">
+            <div class="gauge-title">CARECLARIFY BILL EVALUATION GAUGE</div>
+            <div class="gauge-status-text" id="fairness-status-label">Enter quoted cost to evaluate</div>
+            <div class="gauge-needle-container">
+              <div class="gauge-needle" id="fairness-needle"></div>
+            </div>
+            <p class="gauge-description" id="fairness-explanation">Compare your hospital's estimate against average local data.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: RIGHTS & GRIEVANCE ACTION HUB -->
+    <section id="rights" class="app-section">
+      <div class="rights-layout">
+        <!-- Left Column: Patient Rights Accordion -->
+        <div class="glass-panel">
+          <h2 style="font-family: var(--font-display); margin-bottom: 0.5rem;">Know Your Rights</h2>
+          <p style="color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem;">Under the Clinical Establishments Act and the National Charter of Patients' Rights, you hold enforceable rights in any Indian healthcare facility.</p>
+          
+          <div class="rights-accordions">
+            <!-- Accordion 1 -->
+            <div class="accordion-item open">
+              <button class="accordion-trigger">
+                <span>1. Right to Fully Itemized Bills</span>
+                <span class="accordion-icon">+</span>
+              </button>
+              <div class="accordion-content">
+                <p>Hospitals cannot charge package rates without providing fully itemized invoice sheets showing medical devices, consumables, and drugs consumed. You have the right to request this ledger before clear-signing discharge releases.</p>
+              </div>
+            </div>
+            <!-- Accordion 2 -->
+            <div class="accordion-item">
+              <button class="accordion-trigger">
+                <span>2. Implant Price Caps (NPPA)</span>
+                <span class="accordion-icon">+</span>
+              </button>
+              <div class="accordion-content">
+                <p>The National Pharmaceutical Pricing Authority (NPPA) enforces strict pricing ceilings on coronary stents, cardiac pacemakers, orthopedic knee implants, and cancer medications. Charging above these caps constitutes an illegal, reportable offense.</p>
+              </div>
+            </div>
+            <!-- Accordion 3 -->
+            <div class="accordion-item">
+              <button class="accordion-trigger">
+                <span>3. Consent for Room Surcharge</span>
+                <span class="accordion-icon">+</span>
+              </button>
+              <div class="accordion-content">
+                <p>During admission or emergency check-in, hospitals cannot force auto-upgrades to deluxe rooms and charge subsequent proportional doctor fee multipliers without obtaining an explicit written consent signature from family representatives.</p>
+              </div>
+            </div>
+            <!-- Accordion 4 -->
+            <div class="accordion-item">
+              <button class="accordion-trigger">
+                <span>4. Right to Medical Record Copies</span>
+                <span class="accordion-icon">+</span>
+              </button>
+              <div class="accordion-content">
+                <p>Under IRDAI regulations, insurance claims cannot be delayed due to medical record withholding. You are legally entitled to receive copies of discharge sheets, clinical logs, lab results, and surgeon reports within 24 hours of requesting them.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Grievance Letter Builder -->
+        <div class="glass-panel letter-builder">
+          <h3 style="font-family: var(--font-display); border-bottom: 1px solid var(--border-color); padding-bottom: 0.75rem;">Grievance Dispute Letter Builder</h3>
+          <p style="color: var(--text-secondary); font-size: 0.85rem;">Compile your disputes into a professional, legally-structured complaint copy to submit to hospital superintendents or state health department boards.</p>
+          
+          <div class="letter-form">
+            <div class="input-group">
+              <label for="patient-name">Patient Name:</label>
+              <input type="text" id="patient-name" class="text-input" placeholder="e.g., Priya Sharma" style="padding-left: 1rem;">
+            </div>
+            <div class="input-group">
+              <label for="hospital-name">Hospital Name:</label>
+              <input type="text" id="hospital-name" class="text-input" placeholder="e.g., Apollo Heights, Mumbai" style="padding-left: 1rem;">
+            </div>
+            <div class="input-group">
+              <label for="bill-no">Invoice / Bill Number:</label>
+              <input type="text" id="bill-no" class="text-input" placeholder="e.g., HOSP-2026-8871" style="padding-left: 1rem;">
+            </div>
+            <div class="input-group">
+              <label for="admission-date">Admission Date:</label>
+              <input type="text" id="admission-date" class="text-input" placeholder="e.g., July 12, 2026" style="padding-left: 1rem;">
+            </div>
+            
+            <div class="input-group full-width">
+              <label for="action-request">Action Demanded from Hospital:</label>
+              <select id="action-request" class="select-input">
+                <option value="audit">Request Comprehensive Invoice & Stock Audit</option>
+                <option value="refund">Immediate Refund of Disputed Overcharges</option>
+                <option value="adjust">Recalculate Bill Capped by Insurance Tariffs</option>
+              </select>
+            </div>
+
+            <div class="input-group full-width">
+              <label for="dispute-details">Itemized Dispute Concerns (Paste or type details):</label>
+              <textarea id="dispute-details" class="text-input" rows="4" style="padding-left: 1rem; resize: vertical;" placeholder="- Overcharged Deluxe Room rent (₹15,000 vs Capped ₹8,000)&#10;- Duplicate billing on OT Consumables Kit (₹28,000)"></textarea>
+            </div>
+          </div>
+
+          <h4 style="font-family: var(--font-display); font-size: 0.9rem; margin-top: 1rem; text-transform: uppercase; color: var(--text-secondary);">Letter Preview</h4>
+          <div class="letter-preview-card" id="letter-preview">
+            <!-- Compiled Letter content will be inserted here -->
+          </div>
+
+          <div class="preview-actions">
+            <button class="btn btn-secondary" id="download-letter-btn">📥 Export as Text</button>
+            <button class="btn btn-primary" id="print-letter-btn">🖨️ Print Dispute Copy</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Empathy Footer -->
+  <footer>
+    <div class="container footer-content">
+      <a href="#" class="footer-logo">
+        <img src="assets/logo.png" alt="CareClarify Logo">
+        <span class="brand-name" style="font-size: 1.25rem;">CareClarify</span>
+      </a>
+      <p class="footer-tagline">Providing financial transparency tools to protect patients from excessive healthcare billings. Our tool checks regional price caps, NPPA listings, and compiles official consumer grievance letters.</p>
+      
+      <div class="emergency-strip">
+        <span>🚨</span>
+        <span><strong>CRITICAL NOTICE:</strong> In emergency medical situations, prioritize clinical treatments and stabilization immediately. Under Indian law, hospitals must treat emergency patients first. Review and audit costs after patient stabilization.</span>
+      </div>
+
+      <p class="footer-copyright">&copy; 2026 CareClarify Project. Free, open-source patient advocacy utility. Built for transparency.</p>
+    </div>
+  </footer>
+
+</body>
+</html>
