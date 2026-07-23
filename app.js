@@ -293,225 +293,58 @@ function setupBillAnalyzer() {
   });
 }
 
-function handleUploadedFile(file) {
-  const uploadZone = document.getElementById("upload-zone");
-  const originalText = uploadZone.innerHTML;
+async function handleUploadedFile(file) {
 
-  const restoreUploadZone = () => {
-    uploadZone.style.pointerEvents = "auto";
-    uploadZone.innerHTML = originalText;
-  };
+    const uploadZone = document.getElementById("upload-zone");
+    const originalText = uploadZone.innerHTML;
 
-  const handleError = (message) => {
-    restoreUploadZone();
-    alert(message);
-  };
+    uploadZone.style.pointerEvents = "none";
 
-  uploadZone.style.pointerEvents = "none";
-  uploadZone.innerHTML = `
-    <div style="padding: 1rem 0;">
-      <span class="upload-icon">📸</span>
-      <p class="upload-text" style="color: var(--accent-teal);">Reading uploaded bill image...</p>
-      <p class="upload-subtext">This may take a few seconds while we extract text from the photo.</p>
-      <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 999px; margin-top: 1rem; overflow: hidden; position: relative;">
-        <div style="position: absolute; height: 100%; width: 50%; background: linear-gradient(90deg, var(--accent-teal), var(--accent-indigo)); border-radius: 999px; animation: loadingBar 1.2s infinite ease-in-out;"></div>
-      </div>
-    </div>
-    <style>
-      @keyframes loadingBar {
-        0% { left: -50%; }
-        100% { left: 100%; }
-      }
-    </style>
-  `;
+    uploadZone.innerHTML = `
+        <div style="padding:1rem 0;">
+            <span class="upload-icon">🤖</span>
+            <p class="upload-text" style="color: var(--accent-teal);">
+                AI is analyzing your hospital bill...
+            </p>
+            <p class="upload-subtext">
+                Extracting text • Detecting charges • Comparing prices
+            </p>
+        </div>
+    `;
 
-  const processText = (text) => {
-    restoreUploadZone();
-    const billData = classifyBillText(text);
-    if (!billData) {
-      handleError("We could not classify your bill. Please upload a clearer image or use a text invoice.");
-      return;
-    }
-    simulateScanning(billData);
-  };
+    try {
 
-  if (file.type.startsWith("image/")) {
-    if (typeof Tesseract === "undefined") {
-      handleError("OCR engine not available. Please connect to the internet or reload the page.");
-      return;
-    }
+        const formData = new FormData();
+        formData.append("file", file);
 
-    Tesseract.recognize(file, "eng", {
-      logger: (m) => {
-        // Optionally use progress information later.
-      }
-    })
-      .then((result) => {
-        processText(result.data.text || "");
-      })
-      .catch(() => {
-        handleError("Unable to extract text from this photo. Try a higher-contrast image.");
-      });
-    return;
-  }
+        const response = await fetch("http://127.0.0.1:8000/analyze", {
+            method: "POST",
+            body: formData
+        });
 
-  if (file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt")) {
-    const reader = new FileReader();
-    reader.onload = () => processText(reader.result || "");
-    reader.onerror = () => handleError("Unable to read the uploaded text file.");
-    reader.readAsText(file, "UTF-8");
-    return;
-  }
+        const data = await response.json();
 
-  handleError("Unsupported file type. Please upload a JPG, PNG, or text invoice.");
-}
+        uploadZone.innerHTML = originalText;
+        uploadZone.style.pointerEvents = "auto";
 
-function classifyBillText(text) {
-  const normalized = (text || "").toLowerCase();
+        if (!response.ok) {
+            alert(data.detail || data.error || "Analysis failed.");
+            return;
+        }
 
-  if (/\b(c[- ]?section|cesarean|maternity|delivery)\b/.test(normalized)) {
-    return sampleBills.csection;
-  }
-  if (/\b(angioplasty|stent|cardiac|heart|cath lab|coronary)\b/.test(normalized)) {
-    return sampleBills.cardiac;
-  }
-  if (/\b(dengue|fever|ward|iv infusion|blood count|physiotherapy)\b/.test(normalized)) {
-    return sampleBills.fever;
-  }
+        simulateScanning(data);
 
-  const extractedTotal = extractInvoiceTotal(normalized);
-  if (extractedTotal) {
-    const closestSample = findClosestSampleByTotal(extractedTotal);
-    if (closestSample) {
-      return closestSample;
+    } catch (err) {
+
+        console.error(err);
+
+        uploadZone.innerHTML = originalText;
+        uploadZone.style.pointerEvents = "auto";
+
+        alert("Couldn't connect to the backend.");
+
     }
 
-    return buildGenericBillFromTotal(extractedTotal, normalized);
-  }
-
-  if (normalized.trim().length > 0) {
-    return buildGenericBillFromText(normalized);
-  }
-
-  return null;
-}
-
-function extractInvoiceTotal(text) {
-  const lines = text.split(/\r?\n/);
-  let candidate = null;
-
-  lines.forEach(line => {
-    if (/total|grand total|amount due|net payable|payable amount|bill amount/.test(line)) {
-      const match = line.match(/(?:₹|inr)?\s*([\d,]{3,})/);
-      if (match) {
-        candidate = parseInt(match[1].replace(/[,]/g, ""), 10);
-      }
-    }
-  });
-
-  if (candidate) return candidate;
-
-  const allNumbers = text.match(/(?:₹|inr)?\s*([\d,]{3,})/g);
-  if (!allNumbers) return null;
-
-  const numericValues = allNumbers
-    .map(v => parseInt(v.replace(/[^\d]/g, ""), 10))
-    .filter(v => !Number.isNaN(v) && v > 1000);
-
-  if (numericValues.length === 0) return null;
-  return Math.max(...numericValues);
-}
-
-function findClosestSampleByTotal(total) {
-  let closest = null;
-  let bestDiff = Infinity;
-
-  Object.values(sampleBills).forEach(sample => {
-    const diff = Math.abs(sample.totalOriginal - total);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      closest = sample;
-    }
-  });
-
-  if (bestDiff / total <= 0.35) {
-    return closest;
-  }
-
-  return null;
-}
-
-function buildGenericBillFromTotal(total, text) {
-  const fairTotal = Math.round(total * 0.75);
-  return {
-    title: "Uploaded Invoice Analysis",
-    patient: "Unknown",
-    date: "Unknown",
-    billNo: "Unknown",
-    hospitalName: "Uploaded bill image",
-    totalOriginal: total,
-    totalFair: fairTotal,
-    overcharge: total - fairTotal,
-    items: [
-      {
-        name: "Detected bill total",
-        original: total,
-        fair: fairTotal,
-        category: "Overall",
-        status: fairTotal < total ? "Overcharged" : "Reasonable",
-        reason: "This estimate is based on a generic benchmark of 75% of the uploaded billed total when exact line-item matching is unavailable."
-      }
-    ],
-    warnings: [
-      {
-        id: "warn-generic-1",
-        type: fairTotal < total ? "danger" : "warning",
-        title: fairTotal < total ? "Uploaded bill appears expensive" : "Uploaded bill appears reasonable",
-        text: fairTotal < total
-          ? "The uploaded bill total exceeds a generic fair benchmark. We recommend asking the hospital for a full itemized invoice and comparing line items to policy caps."
-          : "The uploaded bill total is within a generic fair benchmark. Verify the bill with your insurer or hospital for exact line-item compliance.",
-        action: fairTotal < total ? "Request Itemized Bill" : "Review Bill Details"
-      }
-    ],
-    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
-  };
-}
-
-function buildGenericBillFromText(text) {
-  const total = extractInvoiceTotal(text) || 0;
-  const fairTotal = Math.round(total * 0.75);
-  return {
-    title: "Uploaded Invoice Analysis",
-    patient: "Unknown",
-    date: "Unknown",
-    billNo: "Unknown",
-    hospitalName: "Uploaded bill image",
-    totalOriginal: total,
-    totalFair: fairTotal,
-    overcharge: total - fairTotal,
-    items: [
-      {
-        name: "OCR extracted invoice summary",
-        original: total,
-        fair: fairTotal,
-        category: "Overall",
-        status: total > fairTotal ? "Overcharged" : "Reasonable",
-        reason: "This fallback summary is generated from the recognized invoice text when line-item extraction was unavailable."
-      }
-    ],
-    warnings: [
-      {
-        id: "warn-generic-2",
-        type: total > fairTotal ? "danger" : "warning",
-        title: total > fairTotal ? "Uploaded bill looks expensive" : "Uploaded bill looks reasonable",
-        text: total > fairTotal
-          ? "We could not match exact item lines, but the total appears higher than a general benchmark. Request a detailed breakdown from the hospital."
-          : "We could not match exact item lines, but the total appears within a general benchmark. Verify by comparing an itemized bill to insurer caps.",
-        action: total > fairTotal ? "Request Detailed Invoice" : "Review Bill Breakdown"
-      }
-    ],
-    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
-  };
 }
 
 // Simulated scan overlay & delay
@@ -553,10 +386,12 @@ function renderAnalysis(bill) {
   
   activeDisputeBillData = bill; // Save globally for the dispute form
 
+  const currencySymbol = bill.currencySymbol || '₹';
+
   // Set top totals
-  document.getElementById("ana-total-original").textContent = `₹${bill.totalOriginal.toLocaleString('en-IN')}`;
-  document.getElementById("ana-total-fair").textContent = `₹${bill.totalFair.toLocaleString('en-IN')}`;
-  document.getElementById("ana-total-savings").textContent = `₹${bill.overcharge.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-original").textContent = `${currencySymbol}${bill.totalOriginal.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-fair").textContent = `${currencySymbol}${bill.totalFair.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-savings").textContent = `${currencySymbol}${bill.overcharge.toLocaleString('en-IN')}`;
   
   // Render tables
   const originalTableBody = document.getElementById("original-table-body");
@@ -567,7 +402,7 @@ function renderAnalysis(bill) {
   
   bill.items.forEach(item => {
     // Original Table Row
-    const isFlagged = item.status !== "Reasonable";
+    const isFlagged = item.status === "Overcharged"||item.status === "Needs Review";
     const origRow = document.createElement("tr");
     if (isFlagged) origRow.classList.add("flagged");
     
@@ -576,7 +411,7 @@ function renderAnalysis(bill) {
         ${item.name} 
         ${isFlagged ? `<span class="badge" style="font-size: 0.7rem; background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; display: inline-block;">${item.status}</span>` : ""}
       </td>
-      <td class="amount">₹${item.original.toLocaleString('en-IN')}</td>
+      <td class="amount">${currencySymbol}${item.original.toLocaleString('en-IN')}</td>
     `;
     originalTableBody.appendChild(origRow);
     
@@ -585,7 +420,7 @@ function renderAnalysis(bill) {
     auditRow.innerHTML = `
       <td>${item.name}</td>
       <td class="amount" style="color: ${item.fair < item.original ? 'var(--accent-green)' : 'var(--text-primary)'}">
-        ₹${item.fair.toLocaleString('en-IN')}
+        ${currencySymbol}${item.fair.toLocaleString('en-IN')}
       </td>
     `;
     auditedTableBody.appendChild(auditRow);
@@ -612,10 +447,10 @@ function renderAnalysis(bill) {
   });
 
   // Render SVG Donut Chart
-  renderChart(bill.chartData);
+  renderChart(bill.chartData, currencySymbol);
 }
 
-function renderChart(data) {
+function renderChart(data, currencySymbol = '₹') {
   const values = Object.values(data);
   const total = values.reduce((a, b) => a + b, 0);
   const segments = document.querySelectorAll(".donut-segment");
@@ -636,11 +471,11 @@ function renderChart(data) {
   });
 
   // Update text values in Legend
-  chartValues[0].textContent = `₹${(data.room || 0).toLocaleString('en-IN')}`;
-  chartValues[1].textContent = `₹${(data.ot || 0).toLocaleString('en-IN')}`;
-  chartValues[2].textContent = `₹${(data.doctor || 0).toLocaleString('en-IN')}`;
-  chartValues[3].textContent = `₹${(data.consumables || 0).toLocaleString('en-IN')}`;
-  chartValues[4].textContent = `₹${(data.other || 0).toLocaleString('en-IN')}`;
+  chartValues[0].textContent = `${currencySymbol}${(data.room || 0).toLocaleString('en-IN')}`;
+  chartValues[1].textContent = `${currencySymbol}${(data.ot || 0).toLocaleString('en-IN')}`;
+  chartValues[2].textContent = `${currencySymbol}${(data.doctor || 0).toLocaleString('en-IN')}`;
+  chartValues[3].textContent = `${currencySymbol}${(data.consumables || 0).toLocaleString('en-IN')}`;
+  chartValues[4].textContent = `${currencySymbol}${(data.other || 0).toLocaleString('en-IN')}`;
 }
 
 // Global action to route to dispute tab
