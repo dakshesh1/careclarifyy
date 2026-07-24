@@ -317,10 +317,11 @@ async function handleUploadedFile(file) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://https://careclarifyy-production.up.railway.app/analyze", {
-            method: "POST",
-            body: formData
-        });
+       const response = await fetch("https://careclarifyy-production.up.railway.app/analyze", {
+    method: "POST",
+    body: formData
+});
+        
 
         const data = await response.json();
 

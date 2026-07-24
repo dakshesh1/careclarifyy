@@ -67,7 +67,7 @@ def health_check() -> dict:
 def test():
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents="Say hello in one sentence."
         )
         return {"response": response.text}
@@ -155,7 +155,7 @@ async def analyze(file: UploadFile = File(...)):
         image_bytes = await file.read()
 
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-flash-latest",
             contents=[
                 types.Content(
                     role="user",
