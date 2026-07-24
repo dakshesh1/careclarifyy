@@ -63,6 +63,8 @@ def search_medicines(
             "count": len(results),
             "results": results,
         }
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         # Return a simple HTTP error response for any unexpected database or query failure.
         raise HTTPException(status_code=500, detail=f"Search failed: {str(exc)}") from exc

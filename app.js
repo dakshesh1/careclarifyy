@@ -512,11 +512,19 @@ async function searchMedicine(medicineName) {
         `https://careclarifyy-production.up.railway.app/compare?medicine_name=${encodeURIComponent(medicineName)}`
     );
 
-    if (!response.ok) {
-        throw new Error("Medicine not found");
+    let payload = null;
+    try {
+        payload = await response.json();
+    } catch (err) {
+        payload = null;
     }
 
-    return await response.json();
+    if (!response.ok) {
+        const detail = payload?.detail || "Unable to fetch medicine details";
+        throw new Error(detail);
+    }
+
+    return payload;
 }
 function setupPrescriptionDecoder() {
   const searchInput = document.getElementById("drug-search");
@@ -540,7 +548,7 @@ function setupPrescriptionDecoder() {
 
     } catch (err) {
 
-        alert("Medicine not found");
+        alert(err.message || "Medicine not found");
 
     }
 
@@ -569,7 +577,7 @@ function setupPrescriptionDecoder() {
 
         } catch (err) {
 
-            alert("Medicine not found");
+            alert(err.message || "Medicine not found");
 
         }
 

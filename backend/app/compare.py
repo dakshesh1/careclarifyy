@@ -122,6 +122,8 @@ ORDER BY price ASC NULLS LAST
         }
     except HTTPException:
         raise
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Comparison failed: {str(exc)}") from exc
     finally:
