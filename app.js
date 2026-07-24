@@ -293,225 +293,58 @@ function setupBillAnalyzer() {
   });
 }
 
-function handleUploadedFile(file) {
-  const uploadZone = document.getElementById("upload-zone");
-  const originalText = uploadZone.innerHTML;
+async function handleUploadedFile(file) {
 
-  const restoreUploadZone = () => {
-    uploadZone.style.pointerEvents = "auto";
-    uploadZone.innerHTML = originalText;
-  };
+    const uploadZone = document.getElementById("upload-zone");
+    const originalText = uploadZone.innerHTML;
 
-  const handleError = (message) => {
-    restoreUploadZone();
-    alert(message);
-  };
+    uploadZone.style.pointerEvents = "none";
 
-  uploadZone.style.pointerEvents = "none";
-  uploadZone.innerHTML = `
-    <div style="padding: 1rem 0;">
-      <span class="upload-icon">📸</span>
-      <p class="upload-text" style="color: var(--accent-teal);">Reading uploaded bill image...</p>
-      <p class="upload-subtext">This may take a few seconds while we extract text from the photo.</p>
-      <div style="width: 100%; height: 4px; background: rgba(255,255,255,0.05); border-radius: 999px; margin-top: 1rem; overflow: hidden; position: relative;">
-        <div style="position: absolute; height: 100%; width: 50%; background: linear-gradient(90deg, var(--accent-teal), var(--accent-indigo)); border-radius: 999px; animation: loadingBar 1.2s infinite ease-in-out;"></div>
-      </div>
-    </div>
-    <style>
-      @keyframes loadingBar {
-        0% { left: -50%; }
-        100% { left: 100%; }
-      }
-    </style>
-  `;
+    uploadZone.innerHTML = `
+        <div style="padding:1rem 0;">
+            <span class="upload-icon">🤖</span>
+            <p class="upload-text" style="color: var(--accent-teal);">
+                AI is analyzing your hospital bill...
+            </p>
+            <p class="upload-subtext">
+                Extracting text • Detecting charges • Comparing prices
+            </p>
+        </div>
+    `;
 
-  const processText = (text) => {
-    restoreUploadZone();
-    const billData = classifyBillText(text);
-    if (!billData) {
-      handleError("We could not classify your bill. Please upload a clearer image or use a text invoice.");
-      return;
-    }
-    simulateScanning(billData);
-  };
+    try {
 
-  if (file.type.startsWith("image/")) {
-    if (typeof Tesseract === "undefined") {
-      handleError("OCR engine not available. Please connect to the internet or reload the page.");
-      return;
-    }
+        const formData = new FormData();
+        formData.append("file", file);
 
-    Tesseract.recognize(file, "eng", {
-      logger: (m) => {
-        // Optionally use progress information later.
-      }
-    })
-      .then((result) => {
-        processText(result.data.text || "");
-      })
-      .catch(() => {
-        handleError("Unable to extract text from this photo. Try a higher-contrast image.");
-      });
-    return;
-  }
+        const response = await fetch("http://https://careclarifyy-production.up.railway.app/analyze", {
+            method: "POST",
+            body: formData
+        });
 
-  if (file.type === "text/plain" || file.name.toLowerCase().endsWith(".txt")) {
-    const reader = new FileReader();
-    reader.onload = () => processText(reader.result || "");
-    reader.onerror = () => handleError("Unable to read the uploaded text file.");
-    reader.readAsText(file, "UTF-8");
-    return;
-  }
+        const data = await response.json();
 
-  handleError("Unsupported file type. Please upload a JPG, PNG, or text invoice.");
-}
+        uploadZone.innerHTML = originalText;
+        uploadZone.style.pointerEvents = "auto";
 
-function classifyBillText(text) {
-  const normalized = (text || "").toLowerCase();
+        if (!response.ok) {
+            alert(data.detail || data.error || "Analysis failed.");
+            return;
+        }
 
-  if (/\b(c[- ]?section|cesarean|maternity|delivery)\b/.test(normalized)) {
-    return sampleBills.csection;
-  }
-  if (/\b(angioplasty|stent|cardiac|heart|cath lab|coronary)\b/.test(normalized)) {
-    return sampleBills.cardiac;
-  }
-  if (/\b(dengue|fever|ward|iv infusion|blood count|physiotherapy)\b/.test(normalized)) {
-    return sampleBills.fever;
-  }
+        simulateScanning(data);
 
-  const extractedTotal = extractInvoiceTotal(normalized);
-  if (extractedTotal) {
-    const closestSample = findClosestSampleByTotal(extractedTotal);
-    if (closestSample) {
-      return closestSample;
+    } catch (err) {
+
+        console.error(err);
+
+        uploadZone.innerHTML = originalText;
+        uploadZone.style.pointerEvents = "auto";
+
+        alert("Couldn't connect to the backend.");
+
     }
 
-    return buildGenericBillFromTotal(extractedTotal, normalized);
-  }
-
-  if (normalized.trim().length > 0) {
-    return buildGenericBillFromText(normalized);
-  }
-
-  return null;
-}
-
-function extractInvoiceTotal(text) {
-  const lines = text.split(/\r?\n/);
-  let candidate = null;
-
-  lines.forEach(line => {
-    if (/total|grand total|amount due|net payable|payable amount|bill amount/.test(line)) {
-      const match = line.match(/(?:₹|inr)?\s*([\d,]{3,})/);
-      if (match) {
-        candidate = parseInt(match[1].replace(/[,]/g, ""), 10);
-      }
-    }
-  });
-
-  if (candidate) return candidate;
-
-  const allNumbers = text.match(/(?:₹|inr)?\s*([\d,]{3,})/g);
-  if (!allNumbers) return null;
-
-  const numericValues = allNumbers
-    .map(v => parseInt(v.replace(/[^\d]/g, ""), 10))
-    .filter(v => !Number.isNaN(v) && v > 1000);
-
-  if (numericValues.length === 0) return null;
-  return Math.max(...numericValues);
-}
-
-function findClosestSampleByTotal(total) {
-  let closest = null;
-  let bestDiff = Infinity;
-
-  Object.values(sampleBills).forEach(sample => {
-    const diff = Math.abs(sample.totalOriginal - total);
-    if (diff < bestDiff) {
-      bestDiff = diff;
-      closest = sample;
-    }
-  });
-
-  if (bestDiff / total <= 0.35) {
-    return closest;
-  }
-
-  return null;
-}
-
-function buildGenericBillFromTotal(total, text) {
-  const fairTotal = Math.round(total * 0.75);
-  return {
-    title: "Uploaded Invoice Analysis",
-    patient: "Unknown",
-    date: "Unknown",
-    billNo: "Unknown",
-    hospitalName: "Uploaded bill image",
-    totalOriginal: total,
-    totalFair: fairTotal,
-    overcharge: total - fairTotal,
-    items: [
-      {
-        name: "Detected bill total",
-        original: total,
-        fair: fairTotal,
-        category: "Overall",
-        status: fairTotal < total ? "Overcharged" : "Reasonable",
-        reason: "This estimate is based on a generic benchmark of 75% of the uploaded billed total when exact line-item matching is unavailable."
-      }
-    ],
-    warnings: [
-      {
-        id: "warn-generic-1",
-        type: fairTotal < total ? "danger" : "warning",
-        title: fairTotal < total ? "Uploaded bill appears expensive" : "Uploaded bill appears reasonable",
-        text: fairTotal < total
-          ? "The uploaded bill total exceeds a generic fair benchmark. We recommend asking the hospital for a full itemized invoice and comparing line items to policy caps."
-          : "The uploaded bill total is within a generic fair benchmark. Verify the bill with your insurer or hospital for exact line-item compliance.",
-        action: fairTotal < total ? "Request Itemized Bill" : "Review Bill Details"
-      }
-    ],
-    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
-  };
-}
-
-function buildGenericBillFromText(text) {
-  const total = extractInvoiceTotal(text) || 0;
-  const fairTotal = Math.round(total * 0.75);
-  return {
-    title: "Uploaded Invoice Analysis",
-    patient: "Unknown",
-    date: "Unknown",
-    billNo: "Unknown",
-    hospitalName: "Uploaded bill image",
-    totalOriginal: total,
-    totalFair: fairTotal,
-    overcharge: total - fairTotal,
-    items: [
-      {
-        name: "OCR extracted invoice summary",
-        original: total,
-        fair: fairTotal,
-        category: "Overall",
-        status: total > fairTotal ? "Overcharged" : "Reasonable",
-        reason: "This fallback summary is generated from the recognized invoice text when line-item extraction was unavailable."
-      }
-    ],
-    warnings: [
-      {
-        id: "warn-generic-2",
-        type: total > fairTotal ? "danger" : "warning",
-        title: total > fairTotal ? "Uploaded bill looks expensive" : "Uploaded bill looks reasonable",
-        text: total > fairTotal
-          ? "We could not match exact item lines, but the total appears higher than a general benchmark. Request a detailed breakdown from the hospital."
-          : "We could not match exact item lines, but the total appears within a general benchmark. Verify by comparing an itemized bill to insurer caps.",
-        action: total > fairTotal ? "Request Detailed Invoice" : "Review Bill Breakdown"
-      }
-    ],
-    chartData: { room: 0, ot: 0, doctor: 0, consumables: 0, other: fairTotal }
-  };
 }
 
 // Simulated scan overlay & delay
@@ -553,10 +386,12 @@ function renderAnalysis(bill) {
   
   activeDisputeBillData = bill; // Save globally for the dispute form
 
+  const currencySymbol = bill.currencySymbol || '₹';
+
   // Set top totals
-  document.getElementById("ana-total-original").textContent = `₹${bill.totalOriginal.toLocaleString('en-IN')}`;
-  document.getElementById("ana-total-fair").textContent = `₹${bill.totalFair.toLocaleString('en-IN')}`;
-  document.getElementById("ana-total-savings").textContent = `₹${bill.overcharge.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-original").textContent = `${currencySymbol}${bill.totalOriginal.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-fair").textContent = `${currencySymbol}${bill.totalFair.toLocaleString('en-IN')}`;
+  document.getElementById("ana-total-savings").textContent = `${currencySymbol}${bill.overcharge.toLocaleString('en-IN')}`;
   
   // Render tables
   const originalTableBody = document.getElementById("original-table-body");
@@ -567,7 +402,7 @@ function renderAnalysis(bill) {
   
   bill.items.forEach(item => {
     // Original Table Row
-    const isFlagged = item.status !== "Reasonable";
+    const isFlagged = item.status === "Overcharged"||item.status === "Needs Review";
     const origRow = document.createElement("tr");
     if (isFlagged) origRow.classList.add("flagged");
     
@@ -576,7 +411,7 @@ function renderAnalysis(bill) {
         ${item.name} 
         ${isFlagged ? `<span class="badge" style="font-size: 0.7rem; background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.5rem; display: inline-block;">${item.status}</span>` : ""}
       </td>
-      <td class="amount">₹${item.original.toLocaleString('en-IN')}</td>
+      <td class="amount">${currencySymbol}${item.original.toLocaleString('en-IN')}</td>
     `;
     originalTableBody.appendChild(origRow);
     
@@ -585,7 +420,7 @@ function renderAnalysis(bill) {
     auditRow.innerHTML = `
       <td>${item.name}</td>
       <td class="amount" style="color: ${item.fair < item.original ? 'var(--accent-green)' : 'var(--text-primary)'}">
-        ₹${item.fair.toLocaleString('en-IN')}
+        ${currencySymbol}${item.fair.toLocaleString('en-IN')}
       </td>
     `;
     auditedTableBody.appendChild(auditRow);
@@ -612,10 +447,10 @@ function renderAnalysis(bill) {
   });
 
   // Render SVG Donut Chart
-  renderChart(bill.chartData);
+  renderChart(bill.chartData, currencySymbol);
 }
 
-function renderChart(data) {
+function renderChart(data, currencySymbol = '₹') {
   const values = Object.values(data);
   const total = values.reduce((a, b) => a + b, 0);
   const segments = document.querySelectorAll(".donut-segment");
@@ -636,11 +471,11 @@ function renderChart(data) {
   });
 
   // Update text values in Legend
-  chartValues[0].textContent = `₹${(data.room || 0).toLocaleString('en-IN')}`;
-  chartValues[1].textContent = `₹${(data.ot || 0).toLocaleString('en-IN')}`;
-  chartValues[2].textContent = `₹${(data.doctor || 0).toLocaleString('en-IN')}`;
-  chartValues[3].textContent = `₹${(data.consumables || 0).toLocaleString('en-IN')}`;
-  chartValues[4].textContent = `₹${(data.other || 0).toLocaleString('en-IN')}`;
+  chartValues[0].textContent = `${currencySymbol}${(data.room || 0).toLocaleString('en-IN')}`;
+  chartValues[1].textContent = `${currencySymbol}${(data.ot || 0).toLocaleString('en-IN')}`;
+  chartValues[2].textContent = `${currencySymbol}${(data.doctor || 0).toLocaleString('en-IN')}`;
+  chartValues[3].textContent = `${currencySymbol}${(data.consumables || 0).toLocaleString('en-IN')}`;
+  chartValues[4].textContent = `${currencySymbol}${(data.other || 0).toLocaleString('en-IN')}`;
 }
 
 // Global action to route to dispute tab
@@ -671,6 +506,18 @@ window.activateDisputeFlow = function(grievanceTitle) {
 
 
 // 4. Prescription Decoder Controller
+async function searchMedicine(medicineName) {
+
+    const response = await fetch(
+        `https://careclarifyy-production.up.railway.app/compare?medicine_name=${encodeURIComponent(medicineName)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Medicine not found");
+    }
+
+    return await response.json();
+}
 function setupPrescriptionDecoder() {
   const searchInput = document.getElementById("drug-search");
   const suggestionsList = document.getElementById("autocomplete-suggestions");
@@ -679,37 +526,25 @@ function setupPrescriptionDecoder() {
   const searchNotice = document.getElementById("decoder-notice");
 
   // Show suggestions as typing
-  searchInput.addEventListener("input", () => {
-    const val = searchInput.value.trim().toLowerCase();
-    suggestionsList.innerHTML = "";
-    
-    if (val.length === 0) {
-      suggestionsList.style.display = "none";
-      return;
+ searchInput.addEventListener("change", async () => {
+
+    const medicine = searchInput.value.trim();
+
+    if (!medicine) return;
+
+    try {
+
+        const data = await searchMedicine(medicine);
+
+        renderDrugComparison(data);
+
+    } catch (err) {
+
+        alert("Medicine not found");
+
     }
 
-    const matches = prescriptionDB.filter(d => 
-      d.brand.toLowerCase().includes(val) || 
-      d.generic.toLowerCase().includes(val)
-    );
-
-    if (matches.length > 0) {
-      suggestionsList.style.display = "block";
-      matches.forEach(match => {
-        const item = document.createElement("div");
-        item.className = "autocomplete-item";
-        item.textContent = `${match.brand} (${match.generic})`;
-        item.addEventListener("click", () => {
-          searchInput.value = match.brand;
-          suggestionsList.style.display = "none";
-          renderDrugComparison(match);
-        });
-        suggestionsList.appendChild(item);
-      });
-    } else {
-      suggestionsList.style.display = "none";
-    }
-  });
+});
 
   // Hide suggestions list when clicking outside
   document.addEventListener("click", (e) => {
@@ -719,41 +554,73 @@ function setupPrescriptionDecoder() {
   });
 
   // Handle popular drug tags clicks
-  popularTags.forEach(tag => {
-    tag.addEventListener("click", () => {
-      const drugName = tag.getAttribute("data-drug");
-      const drug = prescriptionDB.find(d => d.brand.startsWith(drugName));
-      if (drug) {
-        searchInput.value = drug.brand;
-        renderDrugComparison(drug);
-      }
+ popularTags.forEach(tag => {
+    tag.addEventListener("click", async () => {
+
+        const medicine = tag.getAttribute("data-drug");
+
+        searchInput.value = medicine;
+
+        try {
+
+            const data = await searchMedicine(medicine);
+
+            renderDrugComparison(data);
+
+        } catch (err) {
+
+            alert("Medicine not found");
+
+        }
+
     });
-  });
+});
 }
 
 function renderDrugComparison(drug) {
-  const comparisonContainer = document.getElementById("decoder-result-panel");
-  const searchNotice = document.getElementById("decoder-notice");
-  
-  searchNotice.style.display = "none";
-  comparisonContainer.style.display = "flex";
 
-  const savingsPercent = Math.round(((drug.brandPrice - drug.genericPrice) / drug.brandPrice) * 100);
+    const comparisonContainer = document.getElementById("decoder-result-panel");
+    const searchNotice = document.getElementById("decoder-notice");
 
-  // Fill in DOM
-  document.getElementById("brand-title").textContent = drug.brand;
-  document.getElementById("brand-price-val").textContent = `₹${drug.brandPrice.toFixed(2)}`;
-  
-  document.getElementById("generic-title").textContent = drug.generic;
-  document.getElementById("generic-price-val").textContent = `₹${drug.genericPrice.toFixed(2)}`;
-  
-  document.getElementById("drug-savings-percent").textContent = `${savingsPercent}% SAVED`;
-  document.getElementById("drug-savings-amount").textContent = `Save ₹${(drug.brandPrice - drug.genericPrice).toFixed(2)} per strip`;
-  
-  document.getElementById("drug-therapeutic-class").textContent = drug.category;
-  document.getElementById("drug-indication").textContent = drug.indication;
-  document.getElementById("drug-usage").textContent = drug.usage;
-  document.getElementById("drug-warnings").textContent = drug.warnings;
+    searchNotice.style.display = "none";
+    comparisonContainer.style.display = "flex";
+
+    const brandPrice = drug.selected_medicine.price || 0;
+    const genericPrice = drug.cheapest.price || 0;
+
+    const savingsPercent = Math.round(
+        ((brandPrice - genericPrice) / brandPrice) * 100
+    );
+
+    document.getElementById("brand-title").textContent =
+        drug.selected_medicine.brand_name;
+
+    document.getElementById("brand-price-val").textContent =
+        `₹${brandPrice.toFixed(2)}`;
+
+    document.getElementById("generic-title").textContent =
+        drug.cheapest.brand_name;
+
+    document.getElementById("generic-price-val").textContent =
+        `₹${genericPrice.toFixed(2)}`;
+
+    document.getElementById("drug-savings-percent").textContent =
+        `${savingsPercent}% SAVED`;
+
+    document.getElementById("drug-savings-amount").textContent =
+        `Save ₹${drug.potential_savings.toFixed(2)}`;
+
+    document.getElementById("drug-therapeutic-class").textContent =
+        drug.selected_medicine.category;
+
+    document.getElementById("drug-indication").textContent =
+drug.selected_medicine.description.substring(0,200) + "...";
+
+    document.getElementById("drug-usage").textContent =
+        drug.selected_medicine.manufacturer;
+
+    document.getElementById("drug-warnings").textContent =
+        drug.selected_medicine.side_effects;
 }
 
 
