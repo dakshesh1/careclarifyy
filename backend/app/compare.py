@@ -59,22 +59,23 @@ def compare_medicines(
 
         # Step 2: find all medicines with the same generic_name.
         cursor.execute(
-            """
-            SELECT
-                brand_name,
-                generic_name,
-                manufacturer,
-                category,
-                description,
-                side_effects,
-                drug_interactions,
-                price
-            FROM medicines
-            WHERE generic_name = %s
-ORDER BY price ASC NULLS LAST
-            """,
-            (generic_name, ),
-        )
+    """
+    SELECT
+        brand_name,
+        generic_name,
+        manufacturer,
+        category,
+        description,
+        side_effects,
+        drug_interactions,
+        price
+    FROM medicines
+    WHERE generic_name ILIKE %s
+    ORDER BY price ASC NULLS LAST
+    """,
+    (f"%{generic_name.split('(')[0].strip()}%",),
+)
+        
         alternative_rows = cursor.fetchall()
 
         alternatives = []

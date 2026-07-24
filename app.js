@@ -317,10 +317,11 @@ async function handleUploadedFile(file) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://https://careclarifyy-production.up.railway.app/analyze", {
-            method: "POST",
-            body: formData
-        });
+       const response = await fetch("https://careclarifyy-production.up.railway.app/analyze", {
+    method: "POST",
+    body: formData
+});
+        
 
         const data = await response.json();
 
@@ -509,8 +510,8 @@ window.activateDisputeFlow = function(grievanceTitle) {
 async function searchMedicine(medicineName) {
 
     const response = await fetch(
-        `https://careclarifyy-production.up.railway.app/compare?medicine_name=${encodeURIComponent(medicineName)}`
-    );
+    `https://careclarifyy-production.up.railway.app/search?query=${encodeURIComponent(medicineName)}`
+);
 
     let payload = null;
     try {
@@ -544,7 +545,8 @@ function setupPrescriptionDecoder() {
 
         const data = await searchMedicine(medicine);
 
-        renderDrugComparison(data);
+        console.log(data);
+alert(data.results[0].brand_name);
 
     } catch (err) {
 
@@ -573,7 +575,8 @@ function setupPrescriptionDecoder() {
 
             const data = await searchMedicine(medicine);
 
-            renderDrugComparison(data);
+            console.log(data);
+alert(data.results[0].brand_name);
 
         } catch (err) {
 

@@ -1007,11 +1007,9 @@ def test_generic_alias_complex_array_all_py_versions():
   assert actual_schema_mldev == expected_schema
 
 
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason='| is only supported in Python 3.10 and above.',
 )
 def test_generic_alias_complex_array_with_default_value():
 
@@ -1095,13 +1093,6 @@ def test_generic_alias_complex_array_with_default_value():
   assert actual_schema_mldev == expected_schema
 
 
-
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
-)
 def test_generic_alias_complex_array_with_default_value_all_py_versions():
 
   def func_under_test(
@@ -1514,12 +1505,6 @@ def test_pydantic_model_in_list_type():
   assert actual_schema_vertex == expected_schema
 
 
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
-)
 def test_pydantic_model_in_union_type():
   class CatInformationObject(pydantic.BaseModel):
     name: str
@@ -1662,11 +1647,9 @@ def test_custom_class():
     )
 
 
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason='| is only supported in Python 3.10 and above.',
 )
 def test_type_union():
 
@@ -1740,12 +1723,6 @@ def test_type_union():
   assert actual_schema_mldev == expected_schema
 
 
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
-)
 def test_type_union_all_py_versions():
 
   def func_under_test(
@@ -1925,12 +1902,6 @@ def test_type_union_with_default_value():
   assert actual_schema_mldev == expected_schema
 
 
-@pytest.mark.skip(
-    reason=(
-        'AFC is in progress of refactoring, this test is failing python 3.14'
-        ' b/512415555 will update once refactoring from yyyu@ is done'
-    ),
-)
 def test_type_union_with_default_value_all_py_versions():
 
   def func_under_test(
@@ -2954,19 +2925,3 @@ def test_instantiate_response_from_batch_json():
       parsed.candidates[0].citation_metadata.citations[0].uri
       == 'http://someurl.com'
   )
-
-
-def test_computer_use_types():
-  c = types.ComputerUse(
-      environment=types.Environment.ENVIRONMENT_MOBILE,
-      enable_prompt_injection_detection=True,
-      disabled_safety_policies=[
-          types.SafetyPolicy.FINANCIAL_TRANSACTIONS,
-          types.SafetyPolicy.COMMUNICATION_TOOL,
-      ],
-  )
-  assert c.environment == types.Environment.ENVIRONMENT_MOBILE
-  assert c.enable_prompt_injection_detection is True
-  assert len(c.disabled_safety_policies) == 2
-  assert types.SafetyPolicy.FINANCIAL_TRANSACTIONS in c.disabled_safety_policies
-
