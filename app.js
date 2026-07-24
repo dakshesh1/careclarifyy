@@ -510,8 +510,8 @@ window.activateDisputeFlow = function(grievanceTitle) {
 async function searchMedicine(medicineName) {
 
     const response = await fetch(
-        `https://careclarifyy-production.up.railway.app/compare?medicine_name=${encodeURIComponent(medicineName)}`
-    );
+    `https://careclarifyy-production.up.railway.app/search?query=${encodeURIComponent(medicineName)}`
+);
 
     if (!response.ok) {
         throw new Error("Medicine not found");
@@ -537,7 +537,8 @@ function setupPrescriptionDecoder() {
 
         const data = await searchMedicine(medicine);
 
-        renderDrugComparison(data);
+        console.log(data);
+alert(data.results[0].brand_name);
 
     } catch (err) {
 
@@ -566,7 +567,8 @@ function setupPrescriptionDecoder() {
 
             const data = await searchMedicine(medicine);
 
-            renderDrugComparison(data);
+            console.log(data);
+alert(data.results[0].brand_name);
 
         } catch (err) {
 
