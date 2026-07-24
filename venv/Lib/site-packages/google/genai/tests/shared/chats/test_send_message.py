@@ -15,13 +15,11 @@
 
 """Table tests for chats.send_message()."""
 
-import pydantic
-
 from ... import pytest_helper
-from ... import shared
+from pydantic import BaseModel
 
 
-class _SendMessageParameters(pydantic.BaseModel):
+class _SendMessageParameters(BaseModel):
   model: str
   message: str
 
@@ -34,7 +32,7 @@ test_table: list[pytest_helper.TestTableItem] = [
     pytest_helper.TestTableItem(
         name="test_send_message",
         parameters=_SendMessageParameters(
-            model=shared.GEMINI_MODEL,
+            model="gemini-2.5-flash",
             message="Hello",
         ),
     ),

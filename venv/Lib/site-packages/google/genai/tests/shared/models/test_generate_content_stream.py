@@ -15,13 +15,12 @@
 
 """Tests for models.generate_content_stream()."""
 
-import pydantic
-
+from .... import types as genai_types
 from ... import pytest_helper
-from ... import shared
+from pydantic import BaseModel
 
 
-class _GenerateContentStreamParameters(pydantic.BaseModel):
+class _GenerateContentStreamParameters(BaseModel):
     model: str
     contents: str
 
@@ -39,7 +38,7 @@ test_table: list[pytest_helper.TestTableItem] = [
     pytest_helper.TestTableItem(
         name='test_generate_content_stream',
         parameters=_GenerateContentStreamParameters(
-            model=shared.GEMINI_MODEL,
+            model='gemini-2.5-flash',
             contents='The quick brown fox jumps over the lazy dog.',
         ),
     ),
