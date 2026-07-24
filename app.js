@@ -317,7 +317,7 @@ async function handleUploadedFile(file) {
         const formData = new FormData();
         formData.append("file", file);
 
-        const response = await fetch("http://127.0.0.1:8000/analyze", {
+        const response = await fetch("http://https://careclarifyy-production.up.railway.app/analyze", {
             method: "POST",
             body: formData
         });
@@ -509,7 +509,7 @@ window.activateDisputeFlow = function(grievanceTitle) {
 async function searchMedicine(medicineName) {
 
     const response = await fetch(
-        `http://127.0.0.1:8000/compare?medicine_name=${encodeURIComponent(medicineName)}`
+        `https://careclarifyy-production.up.railway.app/compare?medicine_name=${encodeURIComponent(medicineName)}`
     );
 
     if (!response.ok) {
